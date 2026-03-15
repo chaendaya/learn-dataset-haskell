@@ -1,0 +1,36 @@
+name: Code style checks
+
+concurrency:
+  group: formatting-${{ github.ref_name }}
+  cancel-in-progress: true
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+      - name: Check code formatting
+        run: |
+          nix develop '#haskellFormatter' --command fourmolu --mode=check --check-idempotence servant servant-*
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+      - name: Run hlint check
+        run: |
+          nix develop '#haskellLinter' --command hlint servant servant-*

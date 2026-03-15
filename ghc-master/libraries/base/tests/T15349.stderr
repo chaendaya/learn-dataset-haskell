@@ -1,0 +1,9 @@
+T15349: Uncaught exception ghc-internal:GHC.Internal.Control.Exception.Base.NonTermination:
+
+<<loop>>
+
+While handling thread blocked indefinitely in an MVar operation
+
+HasCallStack backtrace:
+  throwIO, called at libraries/ghc-internal/src/GHC/Internal/Control/Monad/ST/Imp.hs:58:37 in ghc-internal:GHC.Internal.Control.Monad.ST.Imp
+

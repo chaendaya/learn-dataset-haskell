@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  generate-matrix:
+    name: "Generate matrix from cabal"
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract the tested GHC versions
+        id: set-matrix
+        uses: kleidukos/get-tested@v0.1.9.1
+        with:
+          cabal-file: servant/servant.cabal
+          ubuntu-version: "latest"
+          version: 0.1.9.0
+  tests:
+    name: ${{ matrix.ghc }} on ${{ matrix.os }}
+    needs: generate-matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
+    steps:
+    - uses: actions/checkout@v6
+    - uses: haskell-actions/setup@v2
+      id: setup-haskell-cabal
+      name: Setup Haskell
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: 'latest'
+
+    - name: Install system dependencies
+      run: |
+          ./.github/workflows/install-system-dependencies.sh
+
+    - name: Freeze
+      run: |
+        cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
+        cabal freeze
+
+    - name: Cache
+      uses: actions/cache@v5
+      with:
+        path: |
+          ${{ steps.setup-haskell.outputs.cabal-store }}
+          dist-newstyle
+        key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-cabal-${{ hashFiles('./dist-newstyle/cache/plan.json') }}
+        restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
+
+    - name: Install doctest
+      run: |
+        cabal install --ignore-project -j2 doctest --constraint='doctest ^>=0.24'
+
+    - name: Build
+      run: |
+        cabal build all
+
+    - name: Test
+      run: |
+        cabal test all
+
+    - name: Run doctests
+      run: |
+        # Necessary for doctest to be found in $PATH
+        export PATH="$HOME/.cabal/bin:$PATH"
+
+        DOCTEST="cabal repl --with-ghc=doctest"
+        (cd servant && eval $DOCTEST)
+        (cd servant-client && eval $DOCTEST)
+        (cd servant-client-core && eval $DOCTEST)
+        (cd servant-http-streams && eval $DOCTEST)
+        (cd servant-docs && eval $DOCTEST)
+        (cd servant-foreign && eval $DOCTEST)
+        (cd servant-server && eval $DOCTEST)
+        (cd servant-machines && eval $DOCTEST)
+        (cd servant-conduit && eval $DOCTEST)
+        (cd servant-pipes && eval $DOCTEST)
+        (cd servant-quickcheck && eval $DOCTEST)

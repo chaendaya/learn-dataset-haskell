@@ -1,0 +1,20 @@
+*.swp
+dist/
+dist-newstyle/
+conduit/tmp
+conduit/tmp2
+conduit-extra/tmp
+conduit-extra/tmp2
+*.hi
+*.o
+tarballs/
+.hsenv/
+.stack-work/
+*~
+*#
+
+# No nix & direnv setup
+flake.nix
+flake.lock
+.envrc
+.direnv

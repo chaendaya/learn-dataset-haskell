@@ -1,0 +1,4 @@
+#pragma once
+
+/* Whether GMP supports mpz_powm_sec */
+#define HAVE_SECURE_POWM @HaveSecurePowm@

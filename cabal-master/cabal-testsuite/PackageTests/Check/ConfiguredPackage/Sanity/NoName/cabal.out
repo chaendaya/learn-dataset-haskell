@@ -1,0 +1,8 @@
+# cabal check
+Error: [Cabal-7035]
+Error parsing cabal file pkg.cabal:
+
+pkg.cabal: error:
+  "name" field missing
+
+

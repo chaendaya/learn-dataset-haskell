@@ -1,0 +1,54 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -freduction-depth=100 #-}
+
+module Servant.HoistClientSpec (spec) where
+
+import Data.Monoid ()
+import Data.Proxy
+import Prelude.Compat
+import Servant.API (Capture, Get, JSON, Post, (:<|>) ((:<|>)), (:>))
+import Servant.Server
+import Test.Hspec
+import Prelude ()
+
+import Servant.Client
+import Servant.ClientTestUtils
+
+spec :: Spec
+spec = describe "Servant.HoistClientSpec" $ do
+  hoistClientSpec
+
+type HoistClientAPI = Get '[JSON] Int :<|> Capture "n" Int :> Post '[JSON] Int
+
+hoistClientAPI :: Proxy HoistClientAPI
+hoistClientAPI = Proxy
+
+hoistClientServer :: Application -- implements HoistClientAPI
+hoistClientServer = serve hoistClientAPI $ pure 5 :<|> pure
+
+hoistClientSpec :: Spec
+hoistClientSpec = beforeAll (startWaiApp hoistClientServer) $ afterAll endWaiApp $ do
+  describe "Servant.Client.hoistClient" $ do
+    it "allows us to GET/POST/... requests in IO instead of ClientM" $ \(_, baseUrl) -> do
+      let (getInt :<|> postInt) =
+            hoistClient
+              hoistClientAPI
+              (fmap (either (error . show) id) . flip runClient baseUrl)
+              (client hoistClientAPI)
+
+      getInt `shouldReturn` 5
+      postInt 5 `shouldReturn` 5

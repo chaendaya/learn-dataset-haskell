@@ -1,0 +1,49 @@
+name: Tests
+
+on:
+    pull_request:
+        branches:
+        - master
+    push:
+        branches:
+        - master
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: CI
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        ghc: ['9.10', '9.8', '9.6', '9.4']
+        include:
+        - os: macos-latest
+          ghc: '9.10'
+        - os: windows-latest
+          ghc: '9.10'
+
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v4
+
+      - name: Setup Haskell
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          stack-version: latest
+          enable-stack: true
+          cabal-update: false
+
+      - name: Build dependencies
+        run: stack test --stack-yaml=stack-${{ matrix.ghc }}.yaml --dependencies-only
+
+      - name: Build
+        run: stack test --stack-yaml=stack-${{ matrix.ghc }}.yaml --no-run-tests
+
+      - name: Test
+        run: stack test --stack-yaml=stack-${{ matrix.ghc }}.yaml

@@ -1,0 +1,3 @@
+compact_mutable: Uncaught exception ghc-internal:GHC.Internal.IO.Exception.CompactionFailed:
+
+compaction failed: cannot compact mutable objects
